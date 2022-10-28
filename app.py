@@ -10,42 +10,49 @@ import undetected_chromedriver as uc
 app = Flask(__name__)
 
 @app.route("/", methods=['GET','POST'])
-def hellp_world():
+def get_preview():
     if request.method == 'POST':
         url = request.form['url']
     else:
         url = 'https://note.com/npaka/n/n5c3e4ca67956#dGbkR'
-    soup = _get_soup(url)
-    print(soup)
-    result = _get_meta_image(soup)
+    result = _get_preview(url)
     print(result)
     if result is None:
-        return "No image"
+        return "Error"
     else:
-        return result.split("?")[0]
+        return result
 
-def _get_soup(url):
-    options = Options()    
-    options = webdriver.ChromeOptions()
-    options.headless = True
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument("start-maximized")
-    driver = uc.Chrome(options=options)
-    
+
+def _get_preview(url):
+    print("start process")
+    chrome_options = webdriver.ChromeOptions()
+    driver = webdriver.Remote(
+        command_executor="http://localhost:4444/wd/hub",
+        options=chrome_options
+    )
+    result = {}
+    print("start process")
+
     driver.get(url)
-
-    # HTMLを文字コードをUTF-8に変換してから取得します。
     html = driver.page_source.encode('utf-8')    
     soup = BeautifulSoup(html, 'html.parser')
+
+    print("start parse")
+    title = soup.find('title').text
+    print(title)
+    result['title'] = title
+
+    description = soup.find('meta', attrs={'name': 'description'})
+    if description is not None:
+        result['description'] = description.get('content')
+        
+    og_img = soup.find('meta', attrs={'property': 'og:image', 'content': True})
+    if og_img is not None:
+        result['og_img'] = og_img.get('content')
+
+    twitter_image = soup.find('meta', attrs={'property': 'twitter:image', 'content': True})
+    if twitter_image is not None:
+        result['twitter_image'] = twitter_image.get('content')
+    driver.quit()
+    return result
     
-    return soup
-    
-def _get_meta_image(soup):
-    
-    target_sources = ['twitter:image','og:image']
-    taregt_attributes = ['property', 'name']
-    for target_source in target_sources:
-        for target_attribute in taregt_attributes:
-            for meta_tag in soup.find_all('meta', attrs={target_attribute: target_source}):
-                return meta_tag.get('content')
