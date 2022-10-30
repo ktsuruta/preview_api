@@ -1,4 +1,4 @@
-FROM selenium/standalone-chrome:latest
+FROM python:3.7-alpine
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 WORKDIR /code
