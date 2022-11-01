@@ -2,6 +2,7 @@ from flask import Flask, request
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import hashlib
 
 
 app = Flask(__name__)
@@ -44,12 +45,25 @@ def _get_preview(url):
         result['description'] = description.get('content')
         
     og_img = soup.find('meta', attrs={'property': 'og:image', 'content': True})
-    if og_img is not None:
-        result['og_img'] = og_img.get('content')
-
     twitter_image = soup.find('meta', attrs={'property': 'twitter:image', 'content': True})
-    if twitter_image is not None:
-        result['twitter_image'] = twitter_image.get('content')
+    hs = hashlib.md5(url.encode()).hexdigest()
+    if og_img is not None:
+        result['image'] = og_img.get('content')
+    elif twitter_image is not None:
+        result['image'] = twitter_image.get('content')
+    else:
+        result['image'] = hs
+        
+
+    # get width and height of the page
+    w = driver.execute_script("return document.body.scrollWidth;")
+    h = 1080
+    # set window size
+    driver.set_window_size(w,h)
+    FILENAME = "/images/{file_name}.png".format(file_name=hs)
+
+    driver.save_screenshot(FILENAME)
+    
     driver.quit()
     return result
     
