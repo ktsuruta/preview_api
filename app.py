@@ -1,9 +1,11 @@
+from distutils import extension
 from flask import Flask, request
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import hashlib
-
+import urllib.error
+import urllib.request
 
 app = Flask(__name__)
 
@@ -20,6 +22,14 @@ def get_preview():
     else:
         return result
 
+def _download_file(url, dst_path):
+    try:
+        with urllib.request.urlopen(url) as web_file:
+            data = web_file.read()
+            with open(dst_path, mode='wb') as local_file:
+                local_file.write(data)
+    except urllib.error.URLError as e:
+        print(e)
 
 def _get_preview(url):
     print("start process")
@@ -48,13 +58,15 @@ def _get_preview(url):
     twitter_image = soup.find('meta', attrs={'property': 'twitter:image', 'content': True})
     hs = hashlib.md5(url.encode()).hexdigest()
     if og_img is not None:
-        result['image'] = og_img.get('content')
+        extension = og_img.get('content').split("?")[0].split("/")[-1].split(".")[1]
+        images_dst = "/images/{file_name}.{extension}".format(file_name=hs, extension=extension)
+        _download_file(og_img.get('content'),images_dst)
+        result['image'] = "http://localhost/{file_name}.{extension}".format(file_name=hs, extension=extension)
     elif twitter_image is not None:
         result['image'] = twitter_image.get('content')
     else:
-        result['image'] = hs
+        result['image'] = "http://localhost/{file_name}.png".format(file_name=hs)
         
-
     # get width and height of the page
     w = driver.execute_script("return document.body.scrollWidth;")
     h = 1080
