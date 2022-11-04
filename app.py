@@ -60,21 +60,31 @@ def _get_preview(url):
     if og_img is not None:
         extension = og_img.get('content').split("?")[0].split("/")[-1].split(".")[1]
         images_dst = "/images/{file_name}.{extension}".format(file_name=hs, extension=extension)
-        _download_file(og_img.get('content'),images_dst)
-        result['image'] = "http://localhost/{file_name}.{extension}".format(file_name=hs, extension=extension)
+        try:
+            _download_file(og_img.get('content'),images_dst)
+            result['image'] = "http://localhost/{file_name}.{extension}".format(file_name=hs, extension=extension)
+        except:
+            result['image'] = "http://localhost/{file_name}.png".format(file_name=hs)
+            # get width and height of the page
+            w = driver.execute_script("return document.body.scrollWidth;")
+            h = 1080
+            # set window size
+            driver.set_window_size(w,h)
+            FILENAME = "/images/{file_name}.png".format(file_name=hs)
+            driver.save_screenshot(FILENAME)
+
     elif twitter_image is not None:
         result['image'] = twitter_image.get('content')
     else:
         result['image'] = "http://localhost/{file_name}.png".format(file_name=hs)
         
-    # get width and height of the page
-    w = driver.execute_script("return document.body.scrollWidth;")
-    h = 1080
-    # set window size
-    driver.set_window_size(w,h)
-    FILENAME = "/images/{file_name}.png".format(file_name=hs)
-
-    driver.save_screenshot(FILENAME)
+        # get width and height of the page
+        w = driver.execute_script("return document.body.scrollWidth;")
+        h = 1080
+        # set window size
+        driver.set_window_size(w,h)
+        FILENAME = "/images/{file_name}.png".format(file_name=hs)
+        driver.save_screenshot(FILENAME)
     
     driver.quit()
     return result
