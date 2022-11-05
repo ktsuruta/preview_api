@@ -28,8 +28,9 @@ def _download_file(url, dst_path):
             data = web_file.read()
             with open(dst_path, mode='wb') as local_file:
                 local_file.write(data)
+        return 'OK'
     except urllib.error.URLError as e:
-        print(e)
+        return 'NG'
 
 def _get_preview(url):
     print("start process")
@@ -60,10 +61,10 @@ def _get_preview(url):
     if og_img is not None:
         extension = og_img.get('content').split("?")[0].split("/")[-1].split(".")[1]
         images_dst = "/images/{file_name}.{extension}".format(file_name=hs, extension=extension)
-        try:
-            _download_file(og_img.get('content'),images_dst)
+        get_image_result = _download_file(og_img.get('content'),images_dst)
+        if get_image_result == "OK":
             result['image'] = "http://localhost/{file_name}.{extension}".format(file_name=hs, extension=extension)
-        except:
+        else:
             result['image'] = "http://localhost/{file_name}.png".format(file_name=hs)
             # get width and height of the page
             w = driver.execute_script("return document.body.scrollWidth;")
